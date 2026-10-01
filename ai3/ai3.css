@@ -1,0 +1,144 @@
+/* ══ AI WEATHER 3.0 — design, grafy, tabulky, karty ══
+   Aditivní vrstva k AI asistentovi. Celý <style> jde smazat. */
+
+/* — panel: jemnější sklo, větší čitelnost — */
+.aia-panel{background:linear-gradient(180deg,rgba(14,20,34,.985),rgba(9,13,22,.99))!important;
+  border-color:rgba(240,160,48,.3)!important;max-height:min(84vh,720px)!important}
+.aia-head{background:linear-gradient(135deg,rgba(240,160,48,.14),rgba(74,158,255,.08) 70%,transparent)!important}
+.aia-head .aia-h-t small{color:#ffcf8a!important;font-weight:600}
+.aia-msg.bot.ai2-msg{background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.09)}
+.ai2-badge{background:linear-gradient(135deg,rgba(74,158,255,.26),rgba(167,139,250,.22))!important;border-color:rgba(150,180,255,.4)!important;color:#e3ecff!important}
+.ai3-wx,.ai3-data,.ai3-fr,.ai3-guide{font-size:13.5px;line-height:1.55}
+.ai3-wx h4,.ai3-data h4,.ai3-fr h4,.ai3-guide h4{margin:14px 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#ffcf8a}
+.a3-lead{font-size:14px;line-height:1.6;color:var(--text,#eaedf3);margin:8px 0 6px}
+.a3-hi{font-size:13px;color:#ffe2b0;margin:0 0 6px}
+
+/* — hero karta — */
+.a3-hero{display:flex;align-items:center;gap:12px;padding:12px 14px;margin:2px 0 8px;border-radius:16px;
+  background:radial-gradient(120% 140% at 0% 0%,rgba(240,160,48,.2),transparent 60%),linear-gradient(135deg,rgba(74,158,255,.14),rgba(74,158,255,.04));
+  border:1px solid rgba(150,190,255,.22)}
+.a3-hico{font-size:42px;line-height:1;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))}
+.a3-htemp{font-size:38px;font-weight:800;line-height:1;letter-spacing:-.02em;color:#fff;display:flex;flex-direction:column}
+.a3-htemp small{font-size:11px;font-weight:500;letter-spacing:0;color:#b9c6dd;margin-top:3px}
+.a3-hmeta{display:flex;flex-direction:column;gap:2px;min-width:0;margin-left:auto;text-align:right}
+.a3-hmeta b{font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.a3-hmeta span{font-size:11.5px;color:#b9c6dd}
+.a3-chips{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 8px}
+.a3-chips span{font-size:11.5px;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#dbe5f7;white-space:nowrap}
+.a3-dayhead{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+.a3-dayhead .a3-hico{font-size:34px}
+.a3-dayhead b{display:block;font-size:17px;color:#fff}
+.a3-dayhead small{color:#b9c6dd;font-size:11.5px}
+.a3-hrange{margin-left:auto;text-align:right;line-height:1.1}
+.a3-hrange b{font-size:26px;color:#ffb35c}
+.a3-hrange span{font-size:15px;color:#8fc3ff}
+.a3-tmr{margin:8px 0 0;font-size:12.5px;color:#cfd9ee}
+
+/* — poznatky a rady — */
+.a3-ins{list-style:none;margin:8px 0 2px!important;padding:0!important;display:flex;flex-direction:column;gap:6px}
+.a3-ins li{display:flex;gap:9px;align-items:flex-start;margin:0!important;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);font-size:12.8px;line-height:1.5}
+.a3-ins li>span{font-size:17px;line-height:1.2;flex:none}
+.a3-adv li{background:rgba(34,212,116,.07);border-color:rgba(34,212,116,.2)}
+
+/* — grafy — */
+.a3c-box{margin:6px 0 4px;padding:8px 6px 6px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07)}
+svg.a3c{width:100%;height:auto;display:block;overflow:visible;-webkit-tap-highlight-color:transparent}
+.a3c-tx{fill:#a9b8d3;font-size:9.5px;font-family:var(--sans,system-ui,sans-serif)}
+.a3c-vl{font-weight:700;fill:#e7eefc;font-size:10px}
+.a3c-dim{fill:#8fc3ff;font-weight:600}
+.a3c-xs{font-size:8.5px;fill:#7f8fb0}
+.a3c-strong{fill:#ffcf8a;font-weight:800}
+.a3c-hl{font-size:10.5px;fill:#d5e0f5}
+.a3c-big{font-size:15px;font-weight:800;fill:#fff}
+.a3c-ul{font-size:9px;fill:#7f8fb0}
+.a3c-grid{stroke:rgba(255,255,255,.08);stroke-width:1}
+.a3c-zero{stroke:rgba(140,200,255,.55);stroke-width:1;stroke-dasharray:3 3}
+.a3c-band{fill:rgba(255,255,255,.03)}
+.a3c-band.a3c-night{fill:rgba(70,90,170,.24)}
+.a3c-today{fill:rgba(240,160,48,.1);stroke:rgba(240,160,48,.35)}
+.a3c-now{stroke:#f0a030;stroke-width:1.2;stroke-dasharray:3 2}
+.a3c-now-t{fill:#f0a030;font-size:9px;font-weight:800}
+.a3c-hit{fill:transparent}
+.a3c-hit:hover{fill:rgba(255,255,255,.07)}
+.a3c-line{fill:none;stroke:var(--c,#4a9eff);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.a3c-line.a3c-dash{stroke-dasharray:4 3;stroke-width:1.5;opacity:.85}
+.a3c-area{fill:var(--c,#4a9eff);fill-opacity:.2;stroke:none}
+.a3c-dot{fill:var(--c,#4a9eff);stroke:#0b1020;stroke-width:1}
+.a3c-bar{fill:var(--c,#4a9eff)}
+.a3c-mk{fill:#fff;stroke:#f0a030;stroke-width:2}
+.a3c-mk.a3c-mkcold{stroke:#6fd3ff}
+.a3c-slice{stroke:rgba(10,14,24,.9);stroke-width:1.5}
+.a3c-range{stroke:rgba(255,255,255,.25)}
+.a3c-temp{--c:#ff9f43}.a3c-feel{--c:#ffd2a0}.a3c-rain{--c:#4a9eff}.a3c-wind{--c:#4a9eff}.a3c-gust{--c:#ff7a45}
+.a3c-press{--c:#a78bfa}.a3c-hum{--c:#00d4c8}.a3c-cloud{--c:#9fb3d1}
+.a3c-s0,.a3c-c0{--c:#4a9eff}.a3c-s1,.a3c-c1{--c:#f0a030}.a3c-s2,.a3c-c2{--c:#22d474}.a3c-s3,.a3c-c3{--c:#ff6b8b}.a3c-s4,.a3c-c4{--c:#a78bfa}
+.a3c-s5,.a3c-c5{--c:#00d4c8}.a3c-s6,.a3c-c6{--c:#ffd24d}.a3c-s7,.a3c-c7{--c:#ff7a45}.a3c-s8,.a3c-c8{--c:#7bd3ff}.a3c-s9,.a3c-c9{--c:#c0e86a}
+.a3c-leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin:5px 4px 0;font-size:10.5px;color:#a9b8d3}
+.a3c-leg span{display:inline-flex;align-items:center;gap:5px}
+.a3c-leg i{width:12px;height:4px;border-radius:2px;background:var(--c,#4a9eff);display:inline-block}
+.a3c-lg-feel{--c:#ffd2a0}.a3c-lg-temp{--c:#ff9f43}.a3c-lg-rain{--c:#4a9eff;height:8px!important}.a3c-lg-wind{--c:#4a9eff}.a3c-lg-gust{--c:#ff7a45}
+.a3c-lg-night{--c:rgba(70,90,170,.7);height:8px!important}.a3c-lg-press{--c:#a78bfa}.a3c-lg-hum{--c:#00d4c8}.a3c-lg-cloud{--c:#9fb3d1}
+.a3c-lg-range{background:linear-gradient(90deg,#6fd3ff,#ffd24d,#ff5a4f)!important;height:6px!important}
+.a3c-lg-s0{--c:#4a9eff}.a3c-lg-s1{--c:#f0a030}.a3c-lg-s2{--c:#22d474}.a3c-lg-s3{--c:#ff6b8b}.a3c-lg-s4{--c:#a78bfa}.a3c-lg-s5{--c:#00d4c8}
+
+/* — tabulky — */
+.a3-tabwrap{overflow-x:auto;margin:6px 0 4px;border-radius:12px;border:1px solid rgba(255,255,255,.08);-webkit-overflow-scrolling:touch}
+.a3-tab{margin:0!important;width:100%;font-size:12px}
+.a3-tab th{cursor:pointer;white-space:nowrap;background:rgba(255,255,255,.04);position:relative;user-select:none}
+.a3-tab th.a3-sorted::after{content:'▾';margin-left:4px;color:#f0a030}
+.a3-tab th.a3-sorted[data-dir="asc"]::after{content:'▴'}
+.a3-tab td small{color:#8fa0c0;font-size:10.5px}
+.a3-compact td,.a3-compact th{padding:5px 7px!important}
+.a3-tab tr.a3-now td{background:rgba(240,160,48,.12)}
+.a3-sm{font-size:11px;color:#c3d0e8}
+.a3-rng{display:inline-block;position:relative;width:54px;height:6px;border-radius:3px;background:rgba(255,255,255,.1);vertical-align:middle;margin-left:4px}
+.a3-rng i{position:absolute;top:0;bottom:0;border-radius:3px}
+.a3-acts{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px}
+
+/* — doporučené otázky — */
+.a3-follow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.a3-chip{border:1px solid rgba(240,160,48,.35);background:rgba(240,160,48,.09);color:#ffcf8a;font-size:11.8px;padding:6px 11px;border-radius:999px;cursor:pointer;font-family:inherit}
+.a3-chip:active{transform:scale(.97)}
+.a3-chip:hover{background:rgba(240,160,48,.18)}
+
+/* — světlý vzhled — */
+body.aiw-light #aiaOverlay .aia-panel{background:linear-gradient(180deg,#fff,#f4f7fc)!important}
+body.aiw-light .a3-lead,body.aiw-light .a3-hmeta b,body.aiw-light .a3-htemp,body.aiw-light .a3-dayhead b{color:#0f1a2c}
+body.aiw-light .a3-htemp small,body.aiw-light .a3-hmeta span,body.aiw-light .a3-dayhead small{color:#4a5c7d}
+body.aiw-light .a3-chips span,body.aiw-light .a3-ins li{background:rgba(10,29,61,.05);border-color:rgba(10,29,61,.1);color:#16264a}
+body.aiw-light .a3-adv li{background:rgba(34,160,90,.1);border-color:rgba(34,160,90,.3)}
+body.aiw-light .a3c-box{background:rgba(10,29,61,.04);border-color:rgba(10,29,61,.1)}
+body.aiw-light .a3c-tx{fill:#32476b}body.aiw-light .a3c-vl{fill:#0f1a2c}body.aiw-light .a3c-hl{fill:#16264a}body.aiw-light .a3c-big{fill:#0f1a2c}
+body.aiw-light .a3c-grid{stroke:rgba(10,29,61,.1)}body.aiw-light .a3c-band.a3c-night{fill:rgba(70,90,170,.14)}
+body.aiw-light .a3c-leg,body.aiw-light .a3-tmr{color:#32476b}
+body.aiw-light .a3-chip{color:#8a5205;background:rgba(240,160,48,.16);border-color:rgba(200,130,20,.45)}
+body.aiw-light .ai3-wx h4,body.aiw-light .ai3-data h4,body.aiw-light .ai3-fr h4,body.aiw-light .ai3-guide h4{color:#8a5205}
+body.aiw-light .a3-tab th{background:rgba(10,29,61,.06)}
+body.aiw-light .a3-tab tr.a3-now td{background:rgba(240,160,48,.2)}
+body.aiw-light .a3-dim,body.aiw-light .a3c-dim{fill:#1d5fb8}
+
+/* — kamarád, rady, rozhodování, průvodce — */
+.ai3-fr p{margin:6px 0}
+.ai3-fr p:first-child{margin-top:0}
+.a3-steps{margin:6px 0 4px 18px!important;padding:0!important;display:flex;flex-direction:column;gap:5px;font-size:13px}
+.a3-steps li{margin:0!important;padding-left:3px}
+.a3-first{margin:8px 0;padding:9px 11px;border-radius:12px;background:rgba(240,160,48,.12);border:1px solid rgba(240,160,48,.3);font-size:13px}
+.a3-wxline{margin:8px 0;padding:8px 10px;border-radius:12px;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.25);font-size:12.5px}
+.a3-in{width:42px;padding:4px 2px;border-radius:8px;text-align:center;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);color:inherit;font:inherit}
+.a3-dec td,.a3-dec th{text-align:center}.a3-dec td:first-child,.a3-dec th:first-child{text-align:left}
+.a3-dres{margin-top:8px}
+.ai3-rev{margin:6px 0;padding:8px 10px;border-radius:12px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3)}
+.ai3-rev summary{cursor:pointer;font-weight:700;color:#cbbcff}
+.a3-tab tr.a3-off td{opacity:.55}
+.ai3-guide .a3-chip{white-space:normal;text-align:left}
+body.aiw-light .a3-first{background:rgba(240,160,48,.18)}
+body.aiw-light .a3-wxline{background:rgba(74,158,255,.12);color:#16264a}
+body.aiw-light .a3-in{background:rgba(255,255,255,.8);border-color:rgba(10,29,61,.25)}
+body.aiw-light .ai3-rev summary{color:#4a3aa8}
+.a3-tab td,.a3-tab th{white-space:nowrap}
+.a3-compact{font-size:11.5px}
+.a3-tab td small{display:inline}
+body.aiw-light #aiaOverlay .ai2-badge{background:linear-gradient(135deg,rgba(74,158,255,.18),rgba(167,139,250,.16))!important;border-color:rgba(60,100,200,.4)!important;color:#12264a!important}
+body.aiw-light #aiaOverlay .ai2-lead,body.aiw-light #aiaOverlay .ai3-fr{color:#0f1a2c}
+body.aiw-light #aiaOverlay .a3-ins li>div,body.aiw-light #aiaOverlay .a3-steps li{color:#16264a}
+body.aiw-light #aiaOverlay .a3c-vl{fill:#0f1a2c}
