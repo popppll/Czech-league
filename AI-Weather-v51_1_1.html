@@ -224,7 +224,7 @@
      3) LHŮTY OBNOVY (`AIW_RATE`, `AIW_VYHLED`, `AIW_OBNOVA`):
         hodinová 60 min · výhled 3/7/14 dní 6 h (0, 6, 12, 18 h — běh modelu)
         · meteostanice 30 min (`MS_HALF`, `kartaMs`) · dvojník 1 h (`MS_TWIN`, v50)
-        · průlet mezi stanicemi 8 h (`MS_AIR`, v50). Pod nadpisem těchto sekcí je poznámka
+        · průlet mezi stanicemi 5 h (`MS_AIR`, v53; dřív 8 h). Pod nadpisem těchto sekcí je poznámka
         s lhůtou a odpočtem (`.sec-upd`); ostatní sekce mají dál štítek `CAD`.
 
      NOVÉ 2026-10-01 (v44) — OBLOHA VĚTŠÍ, ČERSTVÁ DATA, ČAS MĚŘENÍ
@@ -5396,6 +5396,9 @@ body.aiw-light .afl-row{background:rgba(10,29,61,.045)}
 body.aiw-light .afl-st-no{color:#8a5200}
 body.aiw-light .afl-st-no.fwd{color:#11598f}
 .afl-near{display:block;font-size:11px;opacity:.72;margin-top:2px}
+.afl-live{display:block;margin-top:2px;font-family:var(--mono);font-size:10.5px;color:#9fd8ff}
+.afl-live:empty{display:none}
+body.aiw-light .afl-live{color:#11598f}
 .afl-state{margin:12px 0 4px;padding:5px 10px;border-radius:9px;font-size:13px;background:rgba(120,220,160,.10);border:1px solid rgba(120,220,160,.22)}
 body.aiw-light .afl-state{background:rgba(20,130,80,.08);border-color:rgba(20,130,80,.2)}
 .afl-st-n{flex:1;min-width:0}
@@ -9081,7 +9084,8 @@ h2.section-label{font-size:inherit;font-weight:inherit;line-height:inherit}
      • 🌍 DVOJNÍK: nejbližší kandidáti (slot 'twn') 1× za 60 min (v50: zadání
        „dvojník každou hodinu"), ostatní stanice se berou z uložených dat
        (až 6 h staré) — celá síť se nepřetahuje
-     • 🌬 PRŮLET MEZI STANICEMI (AIW_AIRFLOW, dráha vzduchu) …… 1× za 8 hodin (v50)
+     • 🌬 PRŮLET MEZI STANICEMI (AIW_AIRFLOW, dráha vzduchu) …… 1× za 5 hodin (v53; při vyčerpaném dni 8 h)
+     • STANICE A HORY NA TRASE PRŮLETU (živá čísla, sdílená vrstva Dvojníka) … 1× za 30 min, jen když je sekce vidět
      • ŘEKY (flood-api, průtoky) ……………………………… 1× za hodinu, v celou
      • PRŮJEZD CELÉ SÍTĚ (~1 497 stanic na pozadí) ……… 1× za 8 hodin (v51)
      • MĚŘENÝ ARCHIV (archive/climate) a NADMOŘSKÁ VÝŠKA … navždy
@@ -9130,9 +9134,12 @@ var MS_BRIEF = 3600000;      /* 60 min — 🌅 PŘEHLED DNE (v52: zadání „p
 var MS_TWIN  = 3600000;      /* 1 h — DVOJNÍK POČASÍ (v50: zadání „dvojník 1× za hodinu") */
 var MS_VYHLED= 21600000;     /* 6 h — VÝHLED NA 3 / 7 / 14 DNÍ (v47); shoduje se s během modelu */
 var MS_RIVER = 3600000;      /* 60 min — řeky (flood-api) */
-var MS_AIR   = 28800000;     /* 8 h — PRŮLET MEZI STANICEMI (v50: zadání „průlet zvyš na 8 hodin"). 
+var MS_AIR   = 18000000;     /* 5 h — PRŮLET MEZI STANICEMI (v53: zadání „průlet zkrať na 5 hodin"; v50 to bylo 8 h).
+                                Mřížka dráhy stojí ~170 jednotek na přepočet, 5 h = ~4,8× denně = ~820 jednotek.
+                                Když je denní rozpočet z 45 % pryč (`dnesTesno`), vrací se 8 h (`MS_AIR_SLOW`). 
                                 Dřív si AIW_AIRFLOW držel vlastní 30min schránku a AIW_OBNOVA měla číslo
                                 opsané u sebe — teď obě čtou tuhle jednu hodnotu. */
+var MS_AIR_SLOW = 28800000;  /* 8 h — průlet při vyčerpaném dnešním rozpočtu */
 var STALE    = 5400000;      /* (jen informativně) dřív: nad 90 min byl záznam „studený" a natáhl se hned */
 /* ── POSLEDNÍ ULOŽENÁ DATA SE DRŽÍ VŽDY (2026-09-30, v38) ──────────────
    Dřív byl záznam starší než STALE (90 min; u průjezdu sítě 9 h) „studený"
@@ -9250,6 +9257,8 @@ function denPodil(){
   return _denF;
 }
 function dnesTesno(){ return denPodil() > DEN_PODIL; }
+/* v53: lhůta průletu — 5 h, při vyčerpaném dni 8 h (čte ji AIW_AIRFLOW i poznámka AIW_OBNOVA) */
+function airMs(){ return dnesTesno() ? MS_AIR_SLOW : MS_AIR; }
 /* ── KARTY STANIC ZPOMALUJÍ PODLE DENNÍHO ROZPOČTU (2026-09-30) ─────────
    Naměřeno (simulace, podstrčené odpovědi, cena podle ceníku Open-Meteo):
    ~170 karet stanic × tři dotazy (živá data, druhá vrstva, dnešní max/min)
@@ -9375,7 +9384,7 @@ window.AIW_RATE = {
   dnesTesno: dnesTesno,
   denPodil: denPodil,
   kartaMs: function(){ return kartaMs(MS_LIVE); },   /* v44: aktuální interval karet stanic (ms) */
-  ms: { live: MS_LIVE, fc: MS_FC, river: MS_RIVER, sit: MS_BULK, pul: MS_HALF, twin: MS_TWIN, vyhled: MS_VYHLED, vzduch: MS_AIR, prehled: MS_BRIEF },
+  ms: { live: MS_LIVE, fc: MS_FC, river: MS_RIVER, sit: MS_BULK, pul: MS_HALF, twin: MS_TWIN, vyhled: MS_VYHLED, get vzduch(){ return airMs(); }, prehled: MS_BRIEF },
   /* nejkratší z lhůt — podle ní tiká zarovnaný časovač appky */
   tik: function(){ return MS_LIVE; },
   naPozadi: naPozadi,
@@ -9396,7 +9405,7 @@ window.AIW_RATE = {
       zivaData:  Math.round(MS_LIVE/60000)  + ' min (na místní :00 a :30; další '
         + new Date(zarovnej(MS_LIVE)).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}) + ')',
       dvojnik:   Math.round(MS_TWIN/3600000) + ' h (nejbližší kandidáti; zbytek z uložených dat, celá síť po ' + Math.round(MS_BULK/3600000) + ' h)',
-      prulet:    Math.round(MS_AIR/3600000) + ' h (průlet mezi stanicemi — výpočet dráhy vzduchu)',
+      prulet:    Math.round(airMs()/3600000) + ' h (průlet mezi stanicemi — výpočet dráhy vzduchu; živá čísla stanic a hor na trase po 30 min ze sdílené vrstvy Dvojníka)',
       prehledDne: Math.round(MS_BRIEF/60000) + ' min (🌅 Přehled dne — pozdrav, čísla dne a věty)',
       prujezdSite: Math.round(MS_BULK/3600000) + ' h' + (dnesTesno() ? ' — teď NE (denní rozpočet z ' + Math.round(DEN_PODIL*100) + ' % pryč)' : ''),
       kartyStanic: Math.round(kartaMs(MS_LIVE)/60000) + ' min (denní rozpočet z ' + Math.round(denPodil()*100) + ' % utracený)',
@@ -9410,7 +9419,7 @@ window.AIW_RATE = {
       popredi:   'horní meteostanice vybrané obce: VŽDY po 30 minutách; otevřený panel a mapa: po 30 minutách (při denním rozpočtu nad 60 % po hodině); karty meteostanic: po 30 minutách'
     };
   },
-  popis: 'Hodinová 1×/h · Výhled 3/7/14 dní 1×/6 h · Meteostanice 1×/30 min · Přehled dne 1×/h · Dvojník 1×/h · Průlet mezi stanicemi 1×/8 h · Živá data (domov) 1×/30 min · Řeky 1×/h · Průjezd sítě 1×/8 h'
+  popis: 'Hodinová 1×/h · Výhled 3/7/14 dní 1×/6 h · Meteostanice 1×/30 min · Přehled dne 1×/h · Dvojník 1×/h · Průlet mezi stanicemi 1×/5 h · Stanice a hory na trase 1×/30 min · Živá data (domov) 1×/30 min · Řeky 1×/h · Průjezd sítě 1×/8 h'
 };
 try{ window.__aiwSlotMs = MS_LIVE; }catch(e){}
 })();
@@ -43241,6 +43250,7 @@ window._applyStationSort=_applyStationSort;
       + '<li>🧠 <b>Verze 50 — asistent konečně čte celou větu.</b> Dřív o odpovědi rozhodlo <b>první slovo, které se chytlo</b> nějakého pravidla, takže jedno slovo navíc umělo poslat otázku úplně jinam. Teď se věta vyhodnocuje celá: zdvořilosti a výplň („prosím tě", „hele", „vlastně", „stručně") se <b>odloupnou dřív, než se rozhoduje</b>, a o směru se <b>hlasuje</b> — spočítá se skóre pro celou větu a znovu pro věty, ze kterých se vždycky jedno slovo vypustí. Vyhrává to, co projde většinou pokusů, takže <b>jedno slovo navíc už nepřekope celou odpověď</b>. Navíc si drží, o čem byla řeč: když jen doplníš slovo k předchozí otázce, zůstane u ní.</li>'
       + '<li>🌐 <b>Na internetu najde i to, co není na Wikipedii.</b> Když Wikipedie ani DuckDuckGo nic nemají, zkusí ještě <b>Wikislovník, Wikicesty, Wikizprávy, anglickou, slovenskou i německou Wikipedii, geokodér Open-Meteo, OpenStreetMap, REST Countries, Open Library, Crossref (odborné články), Hacker News a kurzy měn (ECB)</b> — a nálezy seřadí podle toho, jak moc opravdu odpovídají. Teprve když není nic ani tam, přizná, že neví; vymýšlet si pořád nebude.</li>'
       + '<li>🤫 <b>Když něčemu nerozumí, najde si to — ale jen pro sebe.</b> Neznámé slovo si tiše dohledá a zapamatuje si, do jakého oboru patří, aby příště větu zařadil správně. <b>Do chatu z toho nenapíše ani písmeno</b> a bez zapnutého internetu se nedoučuje vůbec. Co se naučil, ukáže v konzoli <code>AIW_SENSE.lex()</code>.</li>'
+      + '<li>🌬 <b>Průlet mezi stanicemi se nově přepočítá 1× za 5 hodin</b> (dřív 8) a <b>hory po cestě</b> mají vlastní výpis horských stanic u dráhy. Teplota a vítr u stanic a hor na trase se berou přímo ze <b>sdílené vrstvy Dvojníka</b> a obnovují se <b>1× za 30 minut</b>, dokud je sekce vidět — nejvýš 16 míst, takže se to vejde do limitů Open-Meteo (při vyčerpaném denním rozpočtu se průlet vrací na 8 hodin a živá čísla zpomalí).</li>'
       + '<li>🔄 <b>🌍 Dvojník počasí se nově hledá každou hodinu</b> (dřív 1× za 2 hodiny) a <b>🌬 Průlet mezi stanicemi se přepočítá 1× za 8 hodin</b> (dřív 1× za 30 minut) — dráha vzduchu se mezi běhy modelu stejně sotva pohne, takže ušetřené dotazy jdou do dvojníka. Pod nadpisem obou sekcí je lhůta i odpočet a bere se z jednoho místa, takže nemůže tvrdit něco jiného, než co appka dělá.</li>'
       + '<li>🌙 <b>Verze 49 — v noci je na obloze měsíc, ne slunce (a mraky se berou z měření).</b> Ikony i grafické okno se dřív řídily jen kódem WMO, takže „jasno“ mělo ve tři ráno vycházející slunce a „jasno“ s naměřenými 40 % oblačnosti nemělo žádný mrak. Teď je tam, kde by ve dne bylo slunce, <b>v noci měsíc</b> — a to i u polojasna, přeháněk a srážek. Měsíc se chová jako slunce ve dne: pod <b>vysokou oblačností</b> (cirry) svítí zastřeně, pod nízkou souvislou oblačností zhasne. Mraky se kreslí podle <b>skutečně naměřené oblačnosti a jejích pater</b> (nízká / střední / vysoká), a slovní popis unese <b>tři</b> vedlejší jevy místo dvou („Déšť se zastřeným měsícem a větrem“). Platí to v horní kartě, v grafickém okně, na kartách stanic i u každé hodiny.</li>'
       + '<li>🎂 <b>Pod významem dne jsou narozeniny.</b> U „Dnes a právě teď“ stojí pod státním svátkem či mezinárodním dnem <b>vždy jedna osobnost, která má dnes narozeniny, a kolik jí je</b> — u 2. října tedy pod Mezinárodním dnem nenásilí Mahátma Gándhí a jeho roky. Appka ví, kdo už nežije, takže neřekne „je mu 157 let“, ale „bylo by mu“. Je to z kalendáře v souboru, nic se nestahuje.</li>'
@@ -50063,7 +50073,7 @@ window.AIW_VYHLED={ _init:true, apply:apply, slot:slot, dalsi:dalsi, ms:MS,
       📅 Výhled 3 / 7 / 14 dní 1× za 6 hodin (běh modelu: 0, 6, 12, 18 h)
       🌍 Meteostanice ........ 1× za 30 minut
       🌍 Dvojník počasí ...... 1× za hodinu          (v50)
-      🌬 Průlet mezi stanicemi 1× za 8 hodin          (v50)
+      🌬 Průlet mezi stanicemi 1× za 5 hodin          (v53)
 
    Odpočet se přepisuje po 20 vteřinách a jen když je karta vidět —
    žádné probouzení na pozadí.
@@ -50085,7 +50095,7 @@ function MS(){
     stanice:ms('pul',1800000),
     twin:   ms('twin',3600000),
     ziva:   ms('live',1800000),  /* v49: živá data horní (mé) meteostanice */
-    vzduch: ms('vzduch',28800000)  /* v50: 8 h — lhůta je v AIW_RATE, AIW_AIRFLOW čte tutéž */
+    vzduch: ms('vzduch',18000000)  /* v53: 5 h (8 h při vyčerpaném dni) — lhůta je v AIW_RATE, AIW_AIRFLOW čte tutéž */
   };
 }
 /* v49: jedno jediné zarovnání pro celou appku — místní celá a půltá */
@@ -50154,9 +50164,10 @@ function kresli(){
     '<b>Dvojník počasí</b> se hledá znovu <b>'+lhuta(M.twin)+'</b> — vždy v celou hodinu. '
     +'Čerstvě se dotahuje nejbližších pár desítek kandidátů, zbytek sítě se čte z uložených dat (celá síť 1× za 6 h).'));
   set('updAirflow', radek(M.vzduch,
-    '<b>Průlet mezi stanicemi</b> se přepočítá <b>'+lhuta(M.vzduch)+'</b>. '
-    +'Je to výpočet dráhy z modelového větru, ne měření — stanice na trase jsou ty, které vzduch opravdu potkal. '
-    +'Dráha za 72 h zpět se mezi běhy modelu (0, 6, 12 a 18 h) sotva pohne, takže častější přepočet by jen utrácel dotazy — tlačítkem „🔄 Přepočítat" si vynutíš čerstvý kdykoli.'));
+    '<b>Průlet mezi stanicemi</b> se přepočítá <b>'+lhuta(M.vzduch)+'</b> (při vyčerpaném dnešním rozpočtu 1× za 8 hodin). '
+    +'Je to výpočet dráhy z modelového větru, ne měření — stanice a <b>hory po cestě</b> jsou ty, které vzduch opravdu potkal. '
+    +'<b>Živá čísla</b> těch stanic a hor (teplota, vítr) se berou ze sdílené vrstvy Dvojníka a obnovují se <b>'+lhuta(M.stanice)+'</b>, '
+    +'dokud je sekce vidět. Tlačítkem „🔄 Přepočítat" si vynutíš čerstvou dráhu kdykoli.'));
   kotlina();
 }
 
@@ -73466,14 +73477,14 @@ window.AIW_AIRFLOW = (function () {
 
   var st = { busy: false, run: 0, data: null, err: '', zoom: null, key: '', ran: false };
   var geo = null;
-  /* v50: lhůta průletu je 8 h a bere se z AIW_RATE.ms.vzduch — jediné místo pravdy,
+  /* v50/v53: lhůta průletu je 5 h (8 h při vyčerpaném dni) a bere se z AIW_RATE.ms.vzduch — jediné místo pravdy,
      aby poznámka pod nadpisem a schránka modulu nemohly tvrdit každá něco jiného. */
   /* v4: ve schránce v3 ještě nejsou souřadnice stanic (ty se do dat
      přidaly až s jejich kreslením do mapy), takže se stará schránka
      zahodí a dráha se jednou dopočítá znovu. */
-  var CKEY = 'aiw_airflow_cache_v4';
-  function CTTLms(){ try{ var m=window.AIW_RATE.ms.vzduch; if(m>0) return m; }catch(e){} return 8*3600000; }
-  try { localStorage.removeItem('aiw_airflow_cache_v1'); localStorage.removeItem('aiw_airflow_cache_v2'); localStorage.removeItem('aiw_airflow_cache_v3'); } catch (e) { }
+  var CKEY = 'aiw_airflow_cache_v5';   /* v5: přibyl výpis horských stanic u dráhy (`mtn`) */
+  function CTTLms(){ try{ var m=window.AIW_RATE.ms.vzduch; if(m>0) return m; }catch(e){} return 5*3600000; }
+  try { localStorage.removeItem('aiw_airflow_cache_v1'); localStorage.removeItem('aiw_airflow_cache_v2'); localStorage.removeItem('aiw_airflow_cache_v3'); localStorage.removeItem('aiw_airflow_cache_v4'); } catch (e) { }
 
   /* ══ 2026-09-16: VE VÝŠCE METEOSTANICE ══════════════════════════
      Trajektorie se už nepočítá natvrdo v 850 hPa (1,5 km), ale ve
@@ -73896,6 +73907,30 @@ window.AIW_AIRFLOW = (function () {
       out = keep.filter(function (x, ix) { return keep.indexOf(x) === ix; });
     }
     return out;
+  }
+  /* ══ v53: ⛰ HORSKÉ STANICE U DRÁHY ("Hory po cestě") ══
+     Stanice kategorie „hory" do MTN_R km od dráhy zpět; zobrazí se nejvyšších MTN_N.
+     Živá čísla jim dodává sdílená vrstva Dvojníka (viz liveRefresh) — žádný vlastní dotaz. */
+  var MTN_R = 40, MTN_N = 5, MTN_MIN = 600;
+  function mountCands(sub, P) {
+    var best = {}, i, k, arr = [], key;
+    for (i = 0; i < sub.length; i += SUB) {
+      var pt = sub[i];
+      if (pt.h < 0.75) continue;
+      var nb = nearR(P, pt.lat, pt.lon, MTN_R);
+      for (k = 0; k < nb.length; k++) {
+        var s = nb[k].s;
+        if (!s.hory) continue;
+        if (!best[s.n] || nb[k].d < best[s.n].d) best[s.n] = { s: s, d: nb[k].d, h: pt.h };
+      }
+    }
+    for (key in best) {
+      var x = best[key], e = stElev(x.s.n);
+      if (e != null && e < MTN_MIN) continue;
+      arr.push({ n: x.s.n, cc: x.s.cc, r: x.s.r, lat: x.s.lat, lon: x.s.lon, e: e, d: Math.round(x.d), h: Math.round(x.h * 10) / 10 });
+    }
+    arr.sort(function (a, b) { return (b.e == null ? 0 : b.e) - (a.e == null ? 0 : a.e); });
+    return arr.slice(0, MTN_N);
   }
   function classify(x, lifts, z0) {
     var e = stElev(x.s.n), kind;
@@ -74379,6 +74414,7 @@ window.AIW_AIRFLOW = (function () {
       var candB = routeCands(b.sub, P, hc.name, hc.country);
       var candF = routeCands(f.sub, P, hc.name, hc.country);
       var pickB = routePick(candB), pickF = routePick(candF).slice(0, 6);
+      var mtn = mountCands(b.sub, P);
       var zMax = z0; for (i = 0; i < back.length; i++) if (back[i].z > zMax) zMax = back[i].z;
       var dist0 = 0;
       for (i = 1; i < back.length; i++) dist0 += hav(back[i - 1].lat, back[i - 1].lon, back[i].lat, back[i].lon);
@@ -74409,7 +74445,7 @@ window.AIW_AIRFLOW = (function () {
           t0: t0, tOrig: tO, z0: z0, zMax: zMax, levs: levs.map(function (x) { return x[0]; }),
           route: pickB.map(function (x) { return classify(x, b.lifts, z0); }),
           routeF: pickF.map(function (x) { return classify(x, f.lifts, z0); }),
-          routeAll: candB.length,
+          routeAll: candB.length, mtn: mtn,
           origSt: nearestAny(orig.lat, orig.lon, 250),
           src: srcR ? { from: srcR.from, to: srcR.to, v: srcR.v, lat: srcR.lat, lon: srcR.lon, g: gs[list.length] || null, st: nearestAny(srcR.lat, srcR.lon, 250) } : null,
           mass: airMass(hc.lat, orig, tot ? sea / tot : 0),
@@ -74417,7 +74453,7 @@ window.AIW_AIRFLOW = (function () {
           origG: (function () { for (i = list.length - 1; i >= 0; i--) if (list[i].kind === 'b' && list[i].h === maxH) return list[i].g; return null; })(),
           ts: Date.now()
         };
-        st.busy = false; st.ran = true;
+        st.busy = false; st.ran = true; liveT = 0;
         cacheSave(st.data);
         render();
         return st.data;
@@ -74440,6 +74476,85 @@ window.AIW_AIRFLOW = (function () {
     unk: ['❔', 'výšku stanice neznám']
   };
   function flagFromCountry(cc) { var m2 = String(cc || '').match(/^(\S+)\s/); return m2 ? m2[1] : '📡'; }
+  /* ══ v53: ŽIVÁ ČÍSLA STANIC A HOR NA TRASE — přímo ze sdílené vrstvy Dvojníka (AIW_LIVEDATA) ══
+     Stejná data, stejná paměť (a 6 h záloha v localStorage) jako Dvojník počasí a karty meteostanic.
+     Obnova jde přes LD.refresh ve slotu 'st' (30 min, žebřík podle denního rozpočtu v AIW_RATE),
+     nejvýš LIVE_N míst, jen když je sekce vidět a záznam je starší než LIVE_AGE. */
+  var LIVE_N = 16, LIVE_AGE = 25 * 60000, LIVE_EVERY = 29 * 60000;
+  var liveBusy = false, liveT = 0;
+  function f1(v) { return (Math.round(v * 10) / 10).toFixed(1).replace('.', ','); }
+  function liveInner(n) {
+    var v = null;
+    try { v = window.AIW_LIVEDATA && AIW_LIVEDATA.val ? AIW_LIVEDATA.val(n) : null; } catch (e) { }
+    if (!v || v.t == null || !isFinite(v.t)) return '';
+    var age = Math.max(0, Math.round((Date.now() - (v.ot || v.ts || Date.now())) / 60000));
+    var agoTxt = age < 1 ? 'právě teď' : age < 90 ? 'před ' + age + ' min' : 'před ' + Math.round(age / 60) + ' h';
+    return '📡 teď <b>' + f1(v.t) + ' °C</b>' + (v.w != null ? ' · 💨 ' + Math.round(v.w) + ' km/h' : '')
+      + (v.h != null ? ' · 💧 ' + Math.round(v.h) + ' %' : '') + ' <span style="opacity:.6">(' + agoTxt + ')</span>';
+  }
+  function liveSpan(n) {
+    return '<span class="afl-live" data-afl-live="' + esc(n) + '">' + liveInner(n) + '</span>';
+  }
+  function paintLive() {
+    var host = $('aflBody');
+    if (!host) return;
+    var els = host.querySelectorAll('[data-afl-live]');
+    for (var i = 0; i < els.length; i++) {
+      var h = liveInner(els[i].getAttribute('data-afl-live'));
+      if (els[i].innerHTML !== h) els[i].innerHTML = h;
+    }
+  }
+  function liveNames() {
+    var d = st.data, out = [], seen = {};
+    if (!d) return out;
+    function add(x) {
+      if (x && x.n && !seen[x.n] && isFinite(x.lat) && isFinite(x.lon) && out.length < LIVE_N) {
+        seen[x.n] = 1; out.push({ name: x.n, lat: x.lat, lon: x.lon });
+      }
+    }
+    (d.mtn || []).forEach(add);                       /* hory mají přednost */
+    (d.route || []).concat(d.routeF || []).forEach(add);
+    return out;
+  }
+  function liveRefresh(force) {
+    var LD = window.AIW_LIVEDATA;
+    if (!LD || !LD.refresh || !st.data || liveBusy || document.hidden) return;
+    if (!force && Date.now() - liveT < LIVE_EVERY) return;
+    try { if (window.AIW_RATE && AIW_RATE.denPodil && AIW_RATE.denPodil() > 0.75) return; } catch (e) { }
+    var list = liveNames();
+    if (!list.length) return;
+    liveBusy = true; liveT = Date.now();
+    var guard = setTimeout(function () { liveBusy = false; }, 90000);
+    try {
+      LD.refresh(list, function () { clearTimeout(guard); liveBusy = false; paintLive(); }, { slot: 'st', maxAge: LIVE_AGE });
+    } catch (e) { clearTimeout(guard); liveBusy = false; }
+  }
+  function nearViewport() {
+    var c = $('aflCard');
+    if (!c) return false;
+    var r = c.getBoundingClientRect(), h = window.innerHeight || 800;
+    return r.bottom > -600 && r.top < h + 600;
+  }
+  /* minutový hlídač: stará dráha → přepočet; jinak živá čísla a překreslení stáří; nic mimo obrazovku */
+  function minuteTick() {
+    if (document.hidden || st.busy || !st.ran || !st.data || !nearViewport()) return;
+    if (Date.now() - (st.data.ts || 0) > CTTLms()) { compute(); return; }
+    paintLive();
+    liveRefresh(false);
+  }
+  function mtnHTML(d) {
+    var m = d && d.mtn;
+    if (!m || !m.length) return '';
+    var h = '<div class="afl-h">⛰ Horské stanice u dráhy — teď</div>'
+      + '<div class="afl-cz" style="margin-bottom:6px">Nejvyšší horské stanice appky do ' + MTN_R + ' km od dráhy zpět. Živá čísla jsou ze sdílené vrstvy Dvojníka (obnova 1× za 30 minut).</div>';
+    for (var i = 0; i < m.length; i++) {
+      var x = m[i];
+      h += '<div class="afl-st"><span class="afl-st-h">− ' + String(x.h).replace('.', ',') + ' h</span>'
+        + '<span class="afl-st-n">⛰ ' + flagFromCountry(x.cc) + ' <b>' + esc(x.n) + '</b> <span class="afl-st-tag">hory</span>'
+        + '<i>' + (x.e != null ? x.e + ' m n. m.' : 'výška neznámá') + ' · ' + x.d + ' km od dráhy' + (x.r ? ' · ' + esc(x.r) : '') + liveSpan(x.n) + '</i></span></div>';
+    }
+    return h;
+  }
   function stationRow(x, sign, no, fwd) {
     var K = KIND[x.k] || KIND.unk;
     var elev = x.e != null ? x.e + ' m' : '? m';
@@ -74452,7 +74567,7 @@ window.AIW_AIRFLOW = (function () {
       + (no ? '<span class="afl-st-no' + (fwd ? ' fwd' : '') + '">' + no + '</span>' : '')
       + '<span class="afl-st-h">' + sign + ' ' + String(x.h).replace('.', ',') + ' h</span>'
       + '<span class="afl-st-n">' + K[0] + ' ' + flagFromCountry(x.cc) + ' <b>' + esc(x.n) + '</b>' + (x.hory ? ' <span class="afl-st-tag">hory</span>' : '')
-      + '<i>' + esc(detail) + ' · ' + x.d + ' km od dráhy' + (x.r ? ' · ' + esc(x.r) : '') + '</i></span></div>';
+      + '<i>' + esc(detail) + ' · ' + x.d + ' km od dráhy' + (x.r ? ' · ' + esc(x.r) : '') + liveSpan(x.n) + '</i></span></div>';
   }
 
 
@@ -74609,6 +74724,7 @@ window.AIW_AIRFLOW = (function () {
       + timeline
       + legHTML
       + terrHTML()
+      + mtnHTML(d)
       + fwdRows
       + '<div class="afl-bar"><button type="button" class="afl-btn" data-afl="run">🔄 Přepočítat</button></div>'
       + '<div class="afl-note">Jde o <b>výpočet</b>, ne o měření: dráha se počítá po hodinách z modelového větru Open-Meteo na mřížce bodů kolem tebe, '
@@ -74617,6 +74733,7 @@ window.AIW_AIRFLOW = (function () {
       + 'Neznámé výšky stanic doplní výškopis Open-Meteo. Názvy míst dodává reverzní geokodér.</div>';
     drawMap();
     try { ensureTerr(); } catch (e) { }
+    setTimeout(function () { paintLive(); liveRefresh(false); }, 0);
   }
 
   /* ══ OBSLUHA ══ */
@@ -74649,6 +74766,7 @@ window.AIW_AIRFLOW = (function () {
     if (!card) return;
     card.addEventListener('click', onClick);
     render();
+    setInterval(minuteTick, 60000);
     try {
       var io = new IntersectionObserver(function (en) {
         for (var i = 0; i < en.length; i++) {
@@ -94455,7 +94573,7 @@ var EXTRA=[
  {id:'x-obnova',names:['lhuty obnovy','jak casto se to obnovuje','jak casto se obnovuji data','jak casto se obnovuje','obnovuji data','obnovuje se','kdy se obnovi data','kdy prijdou nova data','jak casto se stahuji data','kdy se stahuji data','obnova dat','aktualizace dat','jak stara jsou data','jak casto se aktualizuje'],i:'🔄',t:'Lhůty obnovy',
   where:'Poznámka pod nadpisem u ⏰ Hodinové, 📅 3/7/14 dní, 🌍 Stanic, 🌍 Dvojníka a 🌬 Průletu; u ostatních sekcí štítek ⟳',
   sel:'#updStations',
-  d:'Živá data a meteostanice (včetně té horní, mojí) se obnovují na místní celou a půltou, hodinová předpověď v celou hodinu, výhled na 3/7/14 dní po šesti hodinách (0, 6, 12 a 18 h — běh modelu), dvojník po dvou hodinách, průlet mezi stanicemi po půl hodině. Když obnova nevyjde, zůstanou poslední uložená data a appka to zkusí na dalším zarovnaném čase.'},
+  d:'Živá data a meteostanice (včetně té horní, mojí) se obnovují na místní celou a půltou, hodinová předpověď v celou hodinu, výhled na 3/7/14 dní po šesti hodinách (0, 6, 12 a 18 h — běh modelu), dvojník po hodině, průlet mezi stanicemi po pěti hodinách (živá čísla stanic a hor na trase po půl hodině). Když obnova nevyjde, zůstanou poslední uložená data a appka to zkusí na dalším zarovnaném čase.'},
  {id:'x-guess',names:['poznavacka','poznavacka mist','hadej misto','fotky mist'],i:'🖼',t:'Poznávačka míst',where:'☰ Menu → 📷 Fotoalbum',
   fn:function(){ try{ window.AIW_LAUNCH&&AIW_LAUNCH.album&&AIW_LAUNCH.album(); }catch(e){} },
   d:'Hádání, kde fotka vznikla — domy podle stylu města, střechy, sníh, cedule, kompas a hvězdy, galerie více fotek na místo.'},
@@ -113848,7 +113966,7 @@ function utraceno(){
 function hod(ms){ return ms>0?(24/(ms/3600000)):0; }   /* kolikrát za den */
 function rozpis(){
   var R=window.AIW_RATE, st=pocetStanic();
-  var ms=(R&&R.ms)||{live:1800000,fc:3600000,sit:28800000,twin:3600000,river:3600000,vzduch:28800000};
+  var ms=(R&&R.ms)||{live:1800000,fc:3600000,sit:28800000,twin:3600000,river:3600000,vzduch:18000000};
   var P=[];
   P.push({co:'Průjezd celé sítě stanic ('+st+' míst)',lhuta:Math.round(ms.sit/3600000)+' h',
     den:Math.round(hod(ms.sit)*st)});
@@ -113872,8 +113990,13 @@ function rozpis(){
   P.push({co:'Výhled 3 / 7 / 14 dní',lhuta:Math.round((ms.vyhled||21600000)/3600000)+' h',
     den:Math.round(hod(ms.vyhled||21600000))});
   P.push({co:'Řeky (flood-api)',lhuta:Math.round(ms.river/60000)+' min',den:Math.round(hod(ms.river))});
-  P.push({co:'Průlet mezi stanicemi (dráha vzduchu)',lhuta:Math.round(ms.vzduch/3600000)+' h',
-    den:Math.round(hod(ms.vzduch)*30)});
+  /* v53: mřížka dráhy má 168 míst + výškopis (~90 bodů) → ~170 jednotek na přepočet
+     (dřív tu stálo 30, což cenu o řád podhodnocovalo) */
+  P.push({co:'Průlet mezi stanicemi (dráha vzduchu, ~170 jednotek na přepočet)',lhuta:(Math.round(ms.vzduch/360000)/10)+' h',
+    den:Math.round(hod(ms.vzduch)*170)});
+  /* v53: živá čísla stanic a hor na trase průletu — až 16 míst, sdílená vrstva Dvojníka, 30 min, jen když je sekce vidět */
+  P.push({co:'Živá čísla stanic a hor na trase průletu (až 16 míst)',lhuta:Math.round(ms.live/60000)+' min (jen když je sekce vidět)',
+    den:Math.round(hod(ms.live)*16),denReal:Math.round(hod(ms.live)*16/4)});
   P.push({co:'Hromadná hodinová řada (dnešní max/min)',lhuta:'1× denně',den:st});
   var soucet=0, real=0;
   P.forEach(function(p){ soucet+=p.den; real+=(p.denReal!=null?p.denReal:p.den); });
